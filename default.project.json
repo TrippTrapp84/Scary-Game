@@ -5,7 +5,12 @@
 
     "ReplicatedStorage": {
       "$className": "ReplicatedStorage",
-      "$path": "src/ReplicatedStorage"
+      "$path": "src/ReplicatedStorage",
+
+      "Assets": {
+        "$className": "Folder",
+        "$path": "Assets"
+      }
     },
 
     "ServerScriptService": {
