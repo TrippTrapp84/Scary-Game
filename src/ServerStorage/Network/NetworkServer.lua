@@ -82,5 +82,4 @@ function RemoteFunction.OnServerInvoke(player, identifier, packet)
 	end
 end
 
--- Testing something rq
 return Network
