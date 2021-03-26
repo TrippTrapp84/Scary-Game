@@ -6,6 +6,9 @@ local RepStore = game:GetService("ReplicatedStorage")
 local RunServ = game:GetService("RunService")
 local Players = game:GetService("Players")
 
+--// REQUIRES
+local Network = require(ServerStorage.Network.NetworkServer)
+
 --//CONSTANTS
 local RETRY_COUNT = 3
 local RETRY_DELAY = 1
@@ -13,7 +16,6 @@ local AUTOSAVE_INTERVAL = 30
 local DS_KEY = "flfppsjvfqlepzsedhyg"
 
 --// VARIABLES
-local RemoteEvents = RepStore.RemoteEvents.DataEvents
 local DataStore = DSService:GetDataStore(DS_KEY)
 
 
@@ -175,11 +177,11 @@ Players.PlayerRemoving:Connect(function(plr)
     Handler:RemovePlayer(plr)
 end)
 
-RemoteEvents.GetData.OnServerInvoke = function(plr,PlayerID,Index)
+Network.onServerInvoke("get_player_data",function(plr,PlayerID,Index)
     local Success,Data = Handler:GetData(PlayerID,Index)
     print("Called",Success,Data)
     return Success,Data
-end
+end)
 
 game:BindToClose(function()
     for i,v in pairs(PlayerData) do
