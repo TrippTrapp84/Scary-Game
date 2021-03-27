@@ -1,7 +1,9 @@
 --// SERVICES
 local HttpService = game:GetService("HttpService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 --// REQUIRES
+local Events = require(ReplicatedStorage.Network.Utility.Event)
 
 --// CONSTANTS
 local NULL = {}
@@ -16,7 +18,9 @@ Socket.__index = Socket
 --// SINGLE DESCRIPTION METHODS
 local function DefaultValues()
     return {
-        ["url"] = "http://localhost:8080/v1/websocket"
+        url = "http://localhost:8080/v1/websocket",
+        websocket_event_name = "websocket_force_update",
+        websocket_send_request_name = "websocket_force_request"
     }
 end
 
@@ -81,15 +85,22 @@ function Socket.new(Data)
     Obj.CurrentRequestNumber = 1
 
     Obj.isMasterServer = RequestMasterStatus(Obj)
+    
+    if (Obj:GetIsMasterServer()) then
+        coroutine.wrap(function()
+            Obj:KeepAlive()
+        end)()
+    end
 
     return Obj
 end
 
 --// MEMBER FUNCTIONS
-function Socket:IsMasterServer()
+function Socket:GetIsMasterServer()
     return self.isMasterServer
 end
 
+-- Keeps the socket alive and calls an event 
 function Socket:KeepAlive()
     while true do
         self.CurrentRequestNumber += 1
@@ -103,6 +114,7 @@ function Socket:KeepAlive()
             }
         })
 
+        -- if the status code is not a 408 (Request Timeout), then we should examine it else where
         if response.StatusCode ~= 408 then
             -- Fire some event to signify new data may be available
         end
