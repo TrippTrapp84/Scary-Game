@@ -5,7 +5,7 @@ local RepStore = game:GetService("ReplicatedStorage")
 local InventoryHandler = require(RepStore.Modules.InventoryHandler)
 
 --// VARIABLES
-local PlrGui = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+local Menu = game.Players.LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("Menu")
 
 local function Init()
 
@@ -14,9 +14,9 @@ local function Init()
     _G.Services.Client = Services
 
     Services.Inventoryhandler = InventoryHandler.new{
-        Size = 9,
+        Size = 10,
         Inventory = {},
-        MountFrame = PlrGui.Menu.InventoryFrame
+        MountFrame = Menu.InventoryFrame
     }
 
     return true

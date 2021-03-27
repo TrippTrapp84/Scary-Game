@@ -4,6 +4,7 @@ local RunServ = game:GetService("RunService")
 local UIS = game:GetService("UserInputService")
 
 --// REQUIRES
+local ItemConstructor = require(script.ItemConstructor)
 
 --// CONSTANTS
 local NULL = {}
@@ -30,75 +31,24 @@ local function ToScreenScale_Vec2(Pos : Vector2)
 end
 
 --// TABLES
+local KeyCodeToNumber = {
+    [Enum.KeyCode.One] = 1,
+    [Enum.KeyCode.Two] = 2,
+    [Enum.KeyCode.Three] = 3,
+    [Enum.KeyCode.Four] = 4,
+    [Enum.KeyCode.Five] = 5,
+    [Enum.KeyCode.Six] = 6,
+    [Enum.KeyCode.Seven] = 7,
+    [Enum.KeyCode.Eight] = 8,
+    [Enum.KeyCode.Nine] = 9,
+    [Enum.KeyCode.Zero] = 10
+}
+
 local InputFunctions = {
-    [Enum.UserInputType.MouseButton1] = function(self,input,gameProcessed)
-        if self.State.InAction then return end
-        self.InAction = true
-
-        local EndCon
-        local EndTime = tick()
-        local InputEnded = false
-
-        EndCon = UIS.InputEnded:Connect(function(EndInput,EndGP)
-            if EndInput.UserInputType == Enum.UserInputType.MouseButton1 then
-                InputEnded = true
-                EndCon:Disconnect()
-                if tick() - EndTime < DRAG_DELAY then
-                    self.State.InAction = false
-                    print("Grabbing")
-                    self:UseCurrentHover(input.Position)
-                end
-            end
-        end)
-
-        local GrabbedUI = self:GetCurrentHover(input.Position)
-
-        wait(DRAG_DELAY)
-
-        if not InputEnded and GrabbedUI then
-            local MoveVersion = GrabbedUI:Clone()
-            MoveVersion.Size = ToScreenScale_Vec2(GrabbedUI.AbsoluteSize)
-            MoveVersion.Parent = PlrGui.Main
-            while not InputEnded do
-                local MPos = UIS:GetMouseLocation()
-                MoveVersion.Position = ToScreenScale_Vec2(MPos)
-                RunServ.Heartbeat:Wait()
-            end
-            MoveVersion:Destroy()
-            local DroppedUI = self:GetCurrentHover(UIS:GetMouseLocation())
-            if DroppedUI then
-                self:MoveItem(tonumber(GrabbedUI.Name),tonumber(DroppedUI.Name))
-            end
-        end
-
-        self.State.InAction = false
-    end,
     [Enum.UserInputType.Keyboard] = function(self,input,gp)
         if self.State.InAction then return end
-        local Number
-        if input.KeyCode == Enum.KeyCode.One then
-            Number = 1
-        elseif input.KeyCode == Enum.KeyCode.Two then
-            Number = 2
-        elseif input.KeyCode == Enum.KeyCode.Three then
-            Number = 3
-        elseif input.KeyCode == Enum.KeyCode.Four then
-            Number = 4
-        elseif input.KeyCode == Enum.KeyCode.Five then
-            Number = 5
-        elseif input.KeyCode == Enum.KeyCode.Six then
-            Number = 6
-        elseif input.KeyCode == Enum.KeyCode.Seven then
-            Number = 7
-        elseif input.KeyCode == Enum.KeyCode.Eight then
-            Number = 8
-        elseif input.KeyCode == Enum.KeyCode.Nine then
-            Number = 9
-        elseif input.KeyCode == Enum.KeyCode.Zero then
-            Number = 10
-        else
-            return
-        end
+        local Number = KeyCodeToNumber[input.KeyCode]
+        if not Number then return end
         self:UseItem(Number)
     end,
     ["TouchTap"] = function(self,Positions,gp)
@@ -128,7 +78,7 @@ local InputFunctions = {
             local MoveVersion = GrabbedUI:Clone()
             self.State.MoveUI = MoveVersion
             MoveVersion.Size = ToScreenScale_Vec2(GrabbedUI.AbsoluteSize)
-            MoveVersion.Parent = PlrGui.Main
+            MoveVersion.Parent = PlrGui.Menu
             local MPos = Positions[GrabbedFingerInd]
             MoveVersion.Position = ToScreenScale_Vec2(MPos)
         end,
@@ -174,7 +124,7 @@ Handler.__index = Handler
 
 local function DefaultValues()
     return {
-        Size = 9,
+        Size = 10,
         Inventory = {},
         MountFrame = NULL
     }
@@ -260,6 +210,10 @@ function Handler:DisableInventory()
     end
 end
 
+function Handler:MakeItem(ItemData)
+    return ItemConstructor(ItemData)
+end
+
 function Handler:AddItem(Item)
     for i,v in pairs(self.Inventory) do
         if Item.Name == v.Name then
@@ -276,7 +230,7 @@ function Handler:AddItem(Item)
         for i = 1,self.Size do
             if not self.Inventory[i] then
                 Index = i
-                break    
+                break
             end
         end
         self.Inventory[Index] = Item
