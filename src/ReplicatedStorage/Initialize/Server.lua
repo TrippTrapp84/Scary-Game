@@ -6,14 +6,16 @@ local ServerStorage = game:GetService("ServerStorage")
 local WebsocketService = require(ServerStorage.Modules.WebsocketService)
 
 -- VARIABLES
-
+local root_api = "http://localhost:8080"
 
 local function Init()
 
     local Services = {}
     _G.Services = Services
 
-    Services.WebsocketService = WebsocketService.new( { } )
+    Services.WebsocketService = WebsocketService.new({
+        ["url"] = root_api.. "/v1/websocket"
+    })
 
     return true
 end
