@@ -79,7 +79,11 @@ function Handler.new(Data)
         end
     end)
 
-    Obj.Character:FindFirstChild("Humanoid").Died:Disconnect(Obj.Connections[2])
+    Obj.Connection[4] = Obj.Character:FindFirstChild("Humanoid").Died:Connect(function()
+        for _, connection in pairs(Obj.Connections) do
+            connection:Disconnect()
+        end
+    end)
 
     return Obj
 end
