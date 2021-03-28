@@ -1,18 +1,20 @@
 --// SERVICES
 local RunServ = game:GetService("RunService")
 local Players = game:GetService("Players")
+local UserInputServ = game:GetService("UserInputService")
 local Services = _G.Services
 
 --// REQUIRES
 
 --// CONSTANTS
 local NULL = {}
+local RotSpeed = 1
+local MaxReverseLinearAngle = 5
+local MaxStrafeLinearAngle = 30
+local MaxLinearAngle = 90
 
 --// VARIABLES
 local Mouse = Players.LocalPlayer:GetMouse()
-local UserInputServ = game:GetService("UserInputService")
-local RotSpeed = 1
-local MaxLinearAngle = 90
 
 --// LOCAL FUNCTIONS
 local function ErrorFunction(x)
@@ -110,6 +112,11 @@ function Handler.new(Data)
             CameraRot = Obj.Camera.CFrame
             local HRPZ = -Vector3.new(CameraRot.ZVector.X,0, CameraRot.ZVector.Z).Unit
             local Tolorance = (1 - math.abs(CameraRot.ZVector.Y)) * MaxLinearAngle
+            if not UserInputServ:IsKeyDown(Enum.KeyCode.W) and UserInputServ:IsKeyDown(Enum.KeyCode.S) then
+                Tolorance = math.clamp(Tolorance, 0, MaxReverseLinearAngle)
+            elseif UserInputServ:IsKeyDown(Enum.KeyCode.A) or UserInputServ:IsKeyDown(Enum.KeyCode.D) then
+                Tolorance = math.clamp(Tolorance, 0, MaxStrafeLinearAngle)
+            end
             local targetHRPCFrame = CFrame.lookAt(HRP.Position, HRP.Position + HRPZ)
             local AngleDiff = targetHRPCFrame:ToObjectSpace(HRP.CFrame)
             local DotResult = AngleDiff.ZVector.Unit:Dot(Vector3.new(0, 0, 1))
