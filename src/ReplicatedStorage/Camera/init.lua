@@ -11,7 +11,8 @@ local NULL = {}
 --// VARIABLES
 local Mouse = Players.LocalPlayer:GetMouse()
 local UserInputServ = game:GetService("UserInputService")
-local HeadScale = 1.2
+local RotSpeed = 1
+
 
 --// CONSTRUCTOR
 local Handler = {}
@@ -41,11 +42,11 @@ function Handler.new(Data)
 
     local Head = Obj.Character:WaitForChild("Head")
     local HRP = Obj.Character:WaitForChild("HumanoidRootPart")
-    local newVector = nil
-    local newOffset = CFrame.Angles(0,0,0)
+    local CameraRot = nil
+    local Pitch, Yaw = 0, 0
 
-    -- Obj.Camera.CameraType = Enum.CameraType.Scriptable
-    -- UserInputServ.MouseBehavior = Enum.MouseBehavior.LockCenter
+    Obj.Camera.CameraType = Enum.CameraType.Scriptable
+    UserInputServ.MouseBehavior = Enum.MouseBehavior.LockCenter
 
     if Obj.Character then
         local Character = Obj.Character
@@ -69,6 +70,14 @@ function Handler.new(Data)
 
     Obj.Connections[2] = RunServ.RenderStepped:Connect(function()
         if Obj.Character then
+            CameraRot = CFrame.Angles(0, math.rad(Yaw), 0) * CFrame.Angles(math.rad(Pitch), 0, 0)
+            CameraRot = CFrame.fromMatrix(
+                HRP.CFrame:PointToWorldSpace(Vector3.new(0, 1, 0)) + CameraRot.YVector,
+                CameraRot.XVector,
+                CameraRot.YVector,
+                CameraRot.ZVector
+            )
+            Obj:SetCFrame(CameraRot)
             for _, bp in pairs(Obj.Character:GetChildren()) do
                 if bp:IsA("MeshPart") then
                     bp.LocalTransparencyModifier = 0
@@ -77,19 +86,11 @@ function Handler.new(Data)
         end
     end)
 
-    Obj.Connections[3] = RunServ.Heartbeat:Connect(function(Delta)
-        if Obj.Character then
-            local CameraCFrame = HRP.CFrame:ToObjectSpace(Obj.Camera.CFrame)
-            newVector = CameraCFrame.YVector * HeadScale
-            -- newCFrame = HRP.CFrame 
-            -- newCFrame = CFrame.fromMatrix(
-            --     newCFrame.Position,
-            --     Obj.Camera.CFrame.XVector,
-            --     Obj.Camera.CFrame.YVector,
-            --     Obj.Camera.CFrame.ZVector
-            --  )
-            --  newCFrame *= CFrame.new(0,1,0)
-            Obj:SetOffset(Obj.Character:WaitForChild("Humanoid"), newVector)
+    Obj.Connections[3] = UserInputServ.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
+            local DeltaX, DeltaY = -input.Delta.X, -input.Delta.Y
+            Pitch = math.clamp(Pitch + DeltaY/RotSpeed, -90, 90)
+            Yaw += DeltaX/RotSpeed
         end
     end)
 
@@ -103,8 +104,8 @@ function Handler.new(Data)
 end
 
 --// MEMBER FUNCTIONS
-function Handler:SetOffset(Humanoid, Vector : Vector3)
-    Humanoid.CameraOffset = Vector
+function Handler:SetCFrame(CFrame : CFrame)
+    self.Camera.CFrame = CFrame
 end
 
 --// RETURN
