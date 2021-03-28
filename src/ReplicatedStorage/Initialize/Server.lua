@@ -3,7 +3,7 @@ local RepStore = game:GetService("ReplicatedStorage")
 local ServerStorage = game:GetService("ServerStorage")
 
 -- REQUIRES
-local WebsocketHandler = require(ServerStorage.Modules.WebsocketHandler)
+local ApiManager = require(ServerStorage.Modules.ApiManager)
 
 -- CONSTANTS
 local ROOT_API = "http://localhost:8080"
@@ -16,10 +16,10 @@ local function Init()
     local Services = {}
     _G.Services = Services
 
-    Services.WebsocketHandler = WebsocketHandler.new({
-        url = ROOT_API.. "/v1/websocket",
-        websocket_event_name = "websocket_force_update",
-        websocket_send_request_name = "websocket_force_request"
+    Services.ApiManager = ApiManager.new({
+        url = ROOT_API,
+        new_connections_api = "/v1/new_server",  -- TEMP NAME
+        websocket_api = "/v1/websocket" -- Maybe? TEMP NAME
     })
 
     return true
