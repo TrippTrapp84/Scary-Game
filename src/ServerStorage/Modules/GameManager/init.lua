@@ -3,6 +3,7 @@ local RepStore = game:GetService("ReplicatedStorage")
 
 --// REQUIRES
 local StateMachine = require(RepStore.Network.Utility.States)
+local StateSwitchFunctions = require(script.StateChangedFunctions)
 
 --// CONSTANTS
 local NULL = {}
@@ -31,39 +32,6 @@ local States = {
     Post_Game = {
         StartPreGame = "Pre_Game"
     }
-}
-
-local StateSwitchFunctions = {
-    Pre_Game___Match_Day = function(self)
-        
-    end,
-    Match_Day___Match_Day_To_Night = function(self)
-        
-    end,
-    Match_Day_To_Night___Match_Night = function(self)
-        
-    end,
-    Match_Night___Match_Night_To_Day = function(self)
-        
-    end,
-    Match_Night_To_Day___Match_Day = function(self)
-        
-    end,
-    Match_Day___Post_Game = function(self)
-        
-    end,
-    Match_Day_To_Night___Post_Game = function(self)
-        
-    end,
-    Match_Night___Post_Game = function(self)
-        
-    end,
-    Match_Night_To_Day___Post_Game = function(self)
-        
-    end,
-    Post_Game___Pre_Game = function(self)
-        
-    end
 }
 
 --// CONSTRUCTOR
@@ -95,7 +63,7 @@ function Handler.new(Data)
     Obj.Connections[1] = Obj.GameStateMachine.StateChanged:Connect(function(OldState,NewState)
         local SwitchFunction = StateSwitchFunctions[OldState .. "___" .. NewState]
         if not SwitchFunction then
-            error("CRITICAL ERROR: UNHANDLED STATE TRANSITION EXCEPTION")
+            error("CRITICAL ERROR: UNHANDLED STATE TRANSITION EXCEPTION: [" .. OldState:upper() .. "] TO [" .. NewState:upper() .. "]")
         else
             SwitchFunction(Obj)
         end
