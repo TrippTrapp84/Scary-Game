@@ -2,7 +2,6 @@
 local RepStore = game:GetService("ReplicatedStorage")
 
 --// REQUIRES
-local MayhemEnums = require(RepStore.Modules.Enums)
 
 --// TYPE DECLARATIONS
 type Dictionary = {[any] : any}
@@ -18,6 +17,7 @@ end
 
 --// DATA TABLES
 local DefaultValues = {
+    "UseType",
     "Icon",
     "Model",
     "Name",
