@@ -35,8 +35,10 @@ function Socket.new(Data)
     Obj.SocketUUID = HttpService:GenerateGUID(false)
     Obj.CurrentRequestNumber = 0
 
+    Obj.IsAuthed = true
+
     coroutine.wrap(function()
-        while Obj.IsActive do
+        while Obj.IsAuthed do
             local success, response = Obj:SendRequest()
             if not success then
                 -- Send something to the api manager to signify that the api is down currently
@@ -47,12 +49,12 @@ function Socket.new(Data)
             -- Means that we are no longer called the master in relation to the server. Disables us
             if response.StatusCode == 401 then    
                 -- Find if the API manager can get control again, if not begin self destruct
+                Obj.IsAuthed = false
             elseif response.StatusCode == 200 then -- 200 is tenative
                 -- Returns the data in a json object in the body. Then we can fire an event from here to handle that data
             end
         end
     end)()
-
 
     return Obj
 end
@@ -72,14 +74,14 @@ function Socket:SendRequest(body, new_headers)
     for key, value in pairs(self.Added_Headers) do  -- Adds the constructor headers on top
         headers[key] = headers[key] or value        -- Prevents overwriting
     end
-    for key, value in pairs(self.new_headers) do    -- Adds the new headers on top
+    for key, value in pairs(new_headers) do    -- Adds the new headers on top
         headers[key] = headers[key] or value        -- Prevents overwriting
     end
 
     local success, message = pcall(function()
         local response = HttpService:RequestAsync({
             Url = self.Url,
-            Method = "GET",
+            Method = "POST",
             Headers = headers,
             Body = body
         })

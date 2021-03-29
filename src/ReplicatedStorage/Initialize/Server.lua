@@ -18,8 +18,9 @@ local function Init()
 
     Services.ApiManager = ApiManager.new({
         url = ROOT_API,
-        new_connections_api = "/v1/new_server",  -- TEMP NAME
-        websocket_api = "/v1/websocket" -- Maybe? TEMP NAME
+        new_connections_api = "/v1/server/identify",  -- TEMP NAME
+        websocket_api = "/v1/websocket", -- Maybe? TEMP NAME
+        terminating_api = "/v1/server/terminating"
     })
 
     return true

@@ -17,8 +17,9 @@ ApiManager.__index = ApiManager
 local function DefaultValues()
     return {
         url = "http://localhost:8080",
-        new_connections_api = "/v1/new_server",  -- TEMP NAME
-        websocket_api = "/v1/websocket" -- Maybe? TEMP NAME
+        identification_api = "/v1/server/identify",  -- TEMP NAME
+        websocket_api = "/v1/websocket", -- Maybe? TEMP NAME
+        teminating_api = "/v1/server/terminating"
     }
 end
 
@@ -41,15 +42,15 @@ function ApiManager.new(Data)
     while not success do
         success, message = pcall(function()
             local response = HttpService:RequestAsync({
-                Url = Obj.url.. Obj.new_connections_api,
+                Url = Obj.url.. Obj.identification_api,
                 Method = "GET",
                 Headers = {
-                    ["rbx-game-id"] = game.GameId,
-                    ["rbx-server-id"] = Obj.ServerUUID
+                    ["rbx-game-id"] = tostring(game.GameId),
+                    ["rbx-server-id"] = tostring(Obj.ServerUUID)
                 }
             })
 
-            Obj.isMasterServer = response.Headers["rbx-master-server"] or false
+            Obj.isMasterServer = response.Headers["rbx-master-server"] == "true" and true or false
         end)
 
         if not success then
@@ -61,11 +62,24 @@ function ApiManager.new(Data)
         Obj.MasterServerSocket = Websocket.new({
             Url = Obj.url.. Obj.websocket_api,
             Added_Headers = {
-                ["rbx-game-id"] = game.GameId,
-                ["rbx-server-id"] = Obj.ServerUUID
+                ["rbx-game-id"] = tostring(game.GameId),
+                ["rbx-server-id"] = tostring(Obj.ServerUUID)
             }
         })
     end
+
+    game:BindToClose(function()
+        local response = HttpService:RequestAsync({
+            Url = Obj.url.. Obj.teminating_api,
+            Method = "POST",
+            Headers = {
+                ["rbx-game-id"] = tostring(game.GameId),
+                ["rbx-server-id"] = tostring(Obj.ServerUUID)
+            }
+        })
+
+        return response
+    end)
 
     return Obj
 end
