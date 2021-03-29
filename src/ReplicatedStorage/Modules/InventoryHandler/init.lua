@@ -215,15 +215,6 @@ function Handler:MakeItem(ItemData)
 end
 
 function Handler:AddItem(Item)
-    for i,v in pairs(self.Inventory) do
-        if Item.Name == v.Name then
-            if v.Count < v.MaxCount then
-                v.Count += 1
-                return true
-            end
-        end
-    end
-
     if self.InventoryCount < self.Size then
         self.InventoryCount += 1
         local Index
@@ -235,7 +226,7 @@ function Handler:AddItem(Item)
         end
         self.Inventory[Index] = Item
         self.MountFrame[Index%self.Size].Icon.Image = Item.Icon
-        return true
+        return true,Index
     end
 
     return false

@@ -77,7 +77,6 @@ function Handler.new(Data)
     local Pitch, Yaw = 0, 0
 
     Obj.Camera.CameraType = Enum.CameraType.Scriptable
-    UserInputServ.MouseBehavior = Enum.MouseBehavior.LockCenter
 
     if Obj.Character then
         local Character = Obj.Character
@@ -100,6 +99,7 @@ function Handler.new(Data)
     end
 
     Obj.Connections[2] = RunServ.RenderStepped:Connect(function()
+        UserInputServ.MouseBehavior = Enum.MouseBehavior.LockCenter
         if Obj.Character then
             CameraRot = CFrame.Angles(0, math.rad(Yaw), 0) * CFrame.Angles(math.rad(Pitch), 0, 0)
             CameraRot = CFrame.fromMatrix(
