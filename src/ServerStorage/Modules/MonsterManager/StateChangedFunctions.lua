@@ -116,10 +116,6 @@ function StateSwitchFunctions.PrepareInterceptAttack___Retreating(CreatureManage
 	
 end
 
-function StateSwitchFunctions.PrepareInterceptAttack___InitialAttack(CreatureManager)
-	
-end
-
 function StateSwitchFunctions.Tracking_LostPlayer___Retreating(CreatureManager)
 	
 end
