@@ -8,7 +8,7 @@ local Services = _G.Services
 
 --// CONSTANTS
 local NULL = {}
-local RotSpeed = 1
+local RotSpeed = 5
 local MaxReverseLinearAngle = 0
 local MaxStrafeLinearAngle = 25
 local MaxLinearAngle = 80
