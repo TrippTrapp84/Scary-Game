@@ -51,7 +51,7 @@ function Socket.new(Data)
                 -- Find if the API manager can get control again, if not begin self destruct
                 Obj.IsAuthed = false
             elseif response.StatusCode == 200 then -- 200 is tenative
-                -- Returns the data in a json object in the body. Then we can fire an event from here to handle that data
+                -- Returns the data in a json object in the body. Then we can fire an event from here to handle that data 
             end
         end
     end)()

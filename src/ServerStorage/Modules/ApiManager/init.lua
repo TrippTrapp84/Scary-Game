@@ -8,6 +8,11 @@ local Websocket = require(script.Websocket)
 local NULL = {}
 local RETRY_INTERVAL = 10
 
+local EVENT_NAMES = {
+    WEBSOCKET_TERMINATING = "websocket_terminating",
+    API_NOT_RESPONDING = "websocket_api_not_responding"
+}
+
 --// VARIABLES
 
 --// CONSTRUCTOR
@@ -17,9 +22,11 @@ ApiManager.__index = ApiManager
 local function DefaultValues()
     return {
         url = "http://localhost:8080",
-        identification_api = "/v1/server/identify",  -- TEMP NAME
-        websocket_api = "/v1/websocket", -- Maybe? TEMP NAME
-        teminating_api = "/v1/server/terminating"
+        ApiEndpoints = {
+            identification_api = "/v1/server/identify",  -- TEMP NAME
+            websocket_api = "/v1/websocket", -- Maybe? TEMP NAME
+            teminating_api = "/v1/server/terminating"
+        }
     }
 end
 
@@ -42,7 +49,7 @@ function ApiManager.new(Data)
     while not success do
         success, message = pcall(function()
             local response = HttpService:RequestAsync({
-                Url = Obj.url.. Obj.identification_api,
+                Url = Obj.url.. Obj.ApiEndpoints.identification_api,
                 Method = "GET",
                 Headers = {
                     ["rbx-game-id"] = tostring(game.GameId),
@@ -60,17 +67,18 @@ function ApiManager.new(Data)
 
     if Obj.isMasterServer then
         Obj.MasterServerSocket = Websocket.new({
-            Url = Obj.url.. Obj.websocket_api,
+            Url = Obj.url.. Obj.ApiEndpoints.websocket_api,
             Added_Headers = {
                 ["rbx-game-id"] = tostring(game.GameId),
                 ["rbx-server-id"] = tostring(Obj.ServerUUID)
-            }
+            }, 
+            EventNames = EVENT_NAMES
         })
     end
 
     game:BindToClose(function()
         local response = HttpService:RequestAsync({
-            Url = Obj.url.. Obj.teminating_api,
+            Url = Obj.url.. Obj.ApiEndpoints.teminating_api,
             Method = "POST",
             Headers = {
                 ["rbx-game-id"] = tostring(game.GameId),
