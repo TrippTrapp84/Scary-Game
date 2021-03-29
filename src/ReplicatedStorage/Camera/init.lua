@@ -9,9 +9,9 @@ local Services = _G.Services
 --// CONSTANTS
 local NULL = {}
 local RotSpeed = 1
-local MaxReverseLinearAngle = 5
-local MaxStrafeLinearAngle = 30
-local MaxLinearAngle = 90
+local MaxReverseLinearAngle = 0
+local MaxStrafeLinearAngle = 25
+local MaxLinearAngle = 80
 
 --// VARIABLES
 local Mouse = Players.LocalPlayer:GetMouse()
@@ -77,6 +77,7 @@ function Handler.new(Data)
     local Pitch, Yaw = 0, 0
 
     Obj.Camera.CameraType = Enum.CameraType.Scriptable
+    Obj.Neck = Obj.Character:WaitForChild("Head"):FindFirstChild("Neck")
 
     if Obj.Character then
         local Character = Obj.Character
@@ -124,7 +125,7 @@ function Handler.new(Data)
             Angle = math.clamp(Angle, -Tolorance, Tolorance)
             AngleDiff = CFrame.Angles(0, math.rad(Angle), 0)
             --print(Angle, Tolorance)
-            HRP.CFrame = targetHRPCFrame * AngleDiff
+            HRP.CFrame = HRP.CFrame:Lerp(targetHRPCFrame * AngleDiff, .7)
             for _, bp in pairs(Obj.Character:GetChildren()) do
                 if bp:IsA("MeshPart") then
                     bp.LocalTransparencyModifier = 0
@@ -151,8 +152,14 @@ function Handler.new(Data)
 end
 
 --// MEMBER FUNCTIONS
-function Handler:SetCFrame(CFrame : CFrame)
-    self.Camera.CFrame = CFrame
+function Handler:SetCFrame(CF : CFrame)
+    self.Camera.CFrame = CF
+    -- self.Neck.C0 = CFrame.fromMatrix(
+    --     self.Neck.C0.Position,
+    --     CF.XVector,
+    --     CF.YVector,
+    --     CF.ZVector
+    -- )
 end
 
 --// RETURN
