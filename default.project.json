@@ -24,6 +24,7 @@
     },
 
     "StarterPlayer": {
+      "$ignoreUnknownInstances": true,
       "$className": "StarterPlayer",
 
       "StarterPlayerScripts": {
