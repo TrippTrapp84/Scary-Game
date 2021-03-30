@@ -20,10 +20,10 @@ local function DefaultValues()
         Url = NULL,
         Added_Headers = NULL,
         EventNames = {
-            API_NOT_RESPONDING = "websocket_api_not_responding",
-            API_LOST_AUTHORIZATION = "websocket_not_authorized",
+            API_CONNECTION_STATUS_CHANGED = "websocket_api_connect_status",
+            API_AUTHORIZATION_CHANGED = "websocket_authorization_changed",
             WEBSOCKET_GOT_DATA = "websocket_received_data"
-        }        
+        }
     }
 end
 
@@ -42,17 +42,16 @@ function Socket.new(Data)
     Obj.SocketUUID = HttpService:GenerateGUID(false)
     Obj.CurrentRequestNumber = 0
 
-    Obj.IsAuthed = true
     Obj.IsAPIDown = false
+    Obj.IsFirstRequest = true
 
     coroutine.wrap(function()
-        while Obj.IsAuthed do
-            local success, response = Obj:SendRequest()
+        while true do
+            local success, response = Obj:Send()
             if not success then
-
                 if not Obj.IsAPIDown then
                     -- Send something to the api manager to signify that the api is down currently
-                    EVENT_NETWORK.sendPacket(Obj.EventNames.API_NOT_RESPONDING, { api_down = true })
+                    EVENT_NETWORK.sendPacket(Obj.EventNames.API_CONNECTION_STATUS_CHANGED, { api_down = true })
                     Obj.IsAPIDown = true
                 end
 
@@ -62,14 +61,14 @@ function Socket.new(Data)
             
             -- If the server was previously down and now is back up we send the API manager a message saying we got control again
             if Obj.IsAPIDown then
-                EVENT_NETWORK.sendPacket(Obj.EventNames.API_NOT_RESPONDING, { api_down = false })
+                EVENT_NETWORK.sendPacket(Obj.EventNames.API_CONNECTION_STATUS_CHANGED, { api_down = false })
                 Obj.IsAPIDown = false
             end
 
             -- Means that we are no longer called the master in relation to the server. Disables us
             if response.StatusCode == 401 then    
-                EVENT_NETWORK.sendPacket(Obj.EventNames.API_LOST_AUTHORIZATION, { authorized = false })
-                Obj.IsAuthed = false
+                EVENT_NETWORK.sendPacket(Obj.EventNames.API_AUTHORIZATION_CHANGED, { authorized = false, initial_attempt = Obj.IsFirstRequest })
+                return;
             elseif response.StatusCode == 200 then -- 200 is tenative
                 -- Returns the data in a json object in the body. Then we can fire an event from here to handle that data 
                 local isValid, json_data = pcall(function() HttpService:JSONDecode(response.Body) end)
@@ -77,6 +76,13 @@ function Socket.new(Data)
                     EVENT_NETWORK.sendPacket(Obj.EventNames.WEBSOCKET_GOT_DATA, json_data)
                 end
             end
+
+            -- If it's the first request and we made it this far, then we are authorized and need to tell the manager
+            if Obj.IsFirstRequest then
+                EVENT_NETWORK.sendPacket(Obj.EventNames.API_AUTHORIZATION_CHANGED, { authorized = true, initial_attempt = Obj.IsFirstRequest })
+            end
+
+            Obj.IsFirstRequest = false
         end
     end)()
 
@@ -84,7 +90,7 @@ function Socket.new(Data)
 end
 
 --// MEMBER FUNCTIONS
-function Socket:SendRequest(body, new_headers)
+function Socket:Send(body, new_headers)
     body = body or ""
     new_headers = new_headers or {}
 
