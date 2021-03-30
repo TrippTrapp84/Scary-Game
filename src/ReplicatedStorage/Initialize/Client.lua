@@ -3,6 +3,7 @@ local RepStore = game:GetService("ReplicatedStorage")
 
 --// REQUIRES
 local InventoryHandler = require(RepStore.Modules.InventoryHandler)
+local FootprintHandler = require(RepStore.Modules.FootprintHandler)
 
 --// VARIABLES
 local Menu = game.Players.LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("Menu")
@@ -17,6 +18,10 @@ local function Init()
         Size = 10,
         Inventory = {},
         MountFrame = Menu.InventoryFrame
+    }
+
+    Services.FootprintHandler = FootprintHandler.new{
+        
     }
 
     return true
