@@ -60,8 +60,8 @@ function ApiManager.new(Data)
 
     --// INITIALIZATION
     Obj.ServerUUID = HttpService:GenerateGUID(false)
-    Obj:DefineSocketEvents()
 
+    Obj:DefineSocketEvents()
     Obj:AttemptToClaimMasterServer()
 
     Obj.MasterServerTerminatingMSEvent = MessagingService:SubscribeAsync(MESSAGING_SERVICE_TOPICS.MASTER_TERMINATING, function(packet)
@@ -76,48 +76,14 @@ function ApiManager.new(Data)
         end
     end)
 
-    game:BindToClose(function()
-        Obj.MasterServerTerminatingMSEvent:Disconnect()
-        Obj.MasterServerValidationMSEvent:Disconnect()
-
-        local success, _ = pcall(function()
-            local response = HttpService:RequestAsync({
-                Url = Obj.url.. Obj.ApiEndpoints.teminating_api,
-                Method = "POST",
-                Headers = {
-                    ["rbx-game-id"] = tostring(game.GameId),
-                    ["rbx-server-id"] = tostring(Obj.ServerUUID)
-                }
-            })
-            return response
-        end)
-        
-        if not Obj.isMasterServer then
-            return
-        end
-
-        local responder = nil
-        MessagingService:SubscribeAsync(MESSAGING_SERVICE_TOPICS.MASTER_SERVER_RESPONSE, function(packet)
-            if (packet.Data.responder ~= Obj.ServerUUID) then
-                responder = packet.Data.responder
-            end
-        end)
-        MessagingService:PublishAsync(MESSAGING_SERVICE_TOPICS.MASTER_TERMINATING, { master_terminating = true, current_master_id = Obj.ServerUUID })
-
-        local counter = 0
-        repeat counter += wait() until responder or counter >= (RunService:IsStudio() and BIND_TO_CLOSE_TIMEOUT_STUDIO or BIND_TO_CLOSE_TIMEOUT)
-
-        if responder then
-            MessagingService:PublishAsync(MESSAGING_SERVICE_TOPICS.MASTER_SERVER_VALIDATION, { new_master = responder })
-        end
-    end)
+    game:BindToClose(Obj:Terminating)
 
     return Obj
 end
 
---// MEMBER FUNCTIONS
+--// MEMBER FUNCTIONS //--
 
-
+-- Connects all of the socket events to the api manager
 function ApiManager:DefineSocketEvents()
     -- Calls this function when the client (us) loses the ability to communicate with the api.
     EVENT_NETWORK.listenForPacket(EVENT_NAMES.API_CONNECTION_STATUS_CHANGED, function(packet)
@@ -176,6 +142,7 @@ function ApiManager:CheckForAuthorization()
     return self.isMasterServer
 end
 
+-- Attempts to claim the master server position, returns true if it did get it.
 function ApiManager:AttemptToClaimMasterServer()
     self.isMasterServer = self:CheckForAuthorization()
 
@@ -191,6 +158,43 @@ function ApiManager:AttemptToClaimMasterServer()
     end
 
     return self.isMasterServer
+end
+
+-- Called when terminating the server
+function ApiManager:Terminating()
+    self.MasterServerTerminatingMSEvent:Disconnect()
+    self.MasterServerValidationMSEvent:Disconnect()
+
+    local success, _ = pcall(function()
+        local response = HttpService:RequestAsync({
+            Url = self.url.. self.ApiEndpoints.teminating_api,
+            Method = "POST",
+            Headers = {
+                ["rbx-game-id"] = tostring(game.GameId),
+                ["rbx-server-id"] = tostring(self.ServerUUID)
+            }
+        })
+        return response
+    end)
+    
+    if not self.isMasterServer then
+        return
+    end
+
+    local responder = nil
+    MessagingService:SubscribeAsync(MESSAGING_SERVICE_TOPICS.MASTER_SERVER_RESPONSE, function(packet)
+        if (packet.Data.responder ~= self.ServerUUID) then
+            responder = packet.Data.responder
+        end
+    end)
+    MessagingService:PublishAsync(MESSAGING_SERVICE_TOPICS.MASTER_TERMINATING, { master_terminating = true, current_master_id = self.ServerUUID })
+
+    local counter = 0
+    repeat counter += wait() until responder or counter >= (RunService:IsStudio() and BIND_TO_CLOSE_TIMEOUT_STUDIO or BIND_TO_CLOSE_TIMEOUT)
+
+    if responder then
+        MessagingService:PublishAsync(MESSAGING_SERVICE_TOPICS.MASTER_SERVER_VALIDATION, { new_master = responder })
+    end
 end
 
 --// RETURN
