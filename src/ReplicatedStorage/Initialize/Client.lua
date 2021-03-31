@@ -2,6 +2,7 @@
 local RepStore = game:GetService("ReplicatedStorage")
 
 --// REQUIRES
+local Teaser = require(RepStore.Modules.Teaser)
 local InventoryHandler = require(RepStore.Modules.InventoryHandler)
 local FootprintHandler = require(RepStore.Modules.FootprintHandler)
 
@@ -13,6 +14,8 @@ local function Init()
     local Services = {}
     _G.Services = _G.Services or {}
     _G.Services.Client = Services
+
+    Teaser.new()
 
     Services.Inventoryhandler = InventoryHandler.new{
         Size = 10,

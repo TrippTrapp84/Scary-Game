@@ -119,7 +119,7 @@ function Handler.new(Data)
                 Tolorance = math.clamp(Tolorance, 0, MaxStrafeRotation)
             end
             local targetHRPCFrame = CFrame.lookAt(HRP.Position, HRP.Position + HRPZ)
-            local AngleDiff =1 targetHRPCFrame:ToObjectSpace(HRP.CFrame)
+            local AngleDiff = targetHRPCFrame:ToObjectSpace(HRP.CFrame)
             local DotResult = AngleDiff.ZVector.Unit:Dot(Vector3.new(0, 0, 1))
             local Angle = math.acos(DotResult) * 180/math.pi * math.sign(AngleDiff.ZVector.X)
             Angle = math.clamp(Angle, -Tolorance, Tolorance)

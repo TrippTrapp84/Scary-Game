@@ -1,6 +1,6 @@
 local RepStore = game:GetService("ReplicatedStorage")
 
-local CameraManager = require(RepStore.Camera)
+local CameraManager = require(RepStore.Modules.Camera)
 
 local PLAYER = game:GetService("Players").LocalPlayer
 local CAMERA = workspace.CurrentCamera
