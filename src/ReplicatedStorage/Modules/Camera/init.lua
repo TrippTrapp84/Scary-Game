@@ -2,16 +2,19 @@
 local RunServ = game:GetService("RunService")
 local Players = game:GetService("Players")
 local UserInputServ = game:GetService("UserInputService")
+local Lighting = game:GetService("Lighting")
 local Services = _G.Services
 
 --// REQUIRES
 
 --// CONSTANTS
 local NULL = {}
-local RotSpeed = 5
-local MaxReverseRotation = 0
-local MaxStrafeRotation = 25
-local MaxIdleRotation = 80
+local ROTATION_SPEED = 5
+local MAX_REVERSE_ROTATION = 0
+local MAX_STRAFE_ROTATION = 25
+local MAX_IDLE_ROTATION = 80
+local SHOULDER_DEADZONE = 0.2
+local FEET_DEADZONE = 0.2
 
 --// VARIABLES
 local Mouse = Players.LocalPlayer:GetMouse()
@@ -78,6 +81,10 @@ function Handler.new(Data)
 
     Obj.Camera.CameraType = Enum.CameraType.Scriptable
     Obj.Neck = Obj.Character:WaitForChild("Head"):FindFirstChild("Neck")
+    Obj.CameraBlur = Instance.new("BlurEffect")
+    Obj.CameraBlur.Parent = Lighting
+    Obj.CameraBlur.Enabled = true
+    Obj.CameraBlur.Size = 0
 
     if Obj.Character then
         local Character = Obj.Character
@@ -101,6 +108,7 @@ function Handler.new(Data)
 
     Obj.Connections[2] = RunServ.RenderStepped:Connect(function()
         UserInputServ.MouseBehavior = Enum.MouseBehavior.LockCenter
+        Obj.CameraBlur.Size = math.log(math.max(UserInputServ:GetMouseDelta().Magnitude-7,0))*2
         if Obj.Character then
             CameraRot = CFrame.Angles(0, math.rad(Yaw), 0) * CFrame.Angles(math.rad(Pitch), 0, 0)
             CameraRot = CFrame.fromMatrix(
@@ -114,9 +122,9 @@ function Handler.new(Data)
             local HRPZ = -Vector3.new(CameraRot.ZVector.X,0, CameraRot.ZVector.Z).Unit
             local Tolorance = Obj:CalculateTolerance()
             if not UserInputServ:IsKeyDown(Enum.KeyCode.W) and UserInputServ:IsKeyDown(Enum.KeyCode.S) then
-                Tolorance = math.clamp(Tolorance, 0, MaxReverseRotation)
+                Tolorance = math.clamp(Tolorance, 0, MAX_REVERSE_ROTATION)
             elseif UserInputServ:IsKeyDown(Enum.KeyCode.A) or UserInputServ:IsKeyDown(Enum.KeyCode.D) then
-                Tolorance = math.clamp(Tolorance, 0, MaxStrafeRotation)
+                Tolorance = math.clamp(Tolorance, 0, MAX_STRAFE_ROTATION)
             end
             local targetHRPCFrame = CFrame.lookAt(HRP.Position, HRP.Position + HRPZ)
             local AngleDiff = targetHRPCFrame:ToObjectSpace(HRP.CFrame)
@@ -125,6 +133,7 @@ function Handler.new(Data)
             Angle = math.clamp(Angle, -Tolorance, Tolorance)
             AngleDiff = CFrame.Angles(0, math.rad(Angle), 0)
             --print(Angle, Tolorance)
+            HRP.CFrame = targetHRPCFrame * AngleDiff
             --HRP.CFrame = HRP.CFrame:Lerp(targetHRPCFrame * AngleDiff, .7) --// produced some weird results, removing this for now
             for _, bp in pairs(Obj.Character:GetChildren()) do
                 if bp:IsA("MeshPart") then
@@ -137,8 +146,8 @@ function Handler.new(Data)
     Obj.Connections[3] = UserInputServ.InputChanged:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseMovement then
             local DeltaX, DeltaY = -input.Delta.X, -input.Delta.Y
-            Pitch = math.clamp(Pitch + DeltaY/RotSpeed, -85, 85)
-            Yaw += DeltaX/RotSpeed
+            Pitch = math.clamp(Pitch + DeltaY/ROTATION_SPEED, -85, 85)
+            Yaw += DeltaX/ROTATION_SPEED
         end
     end)
 
@@ -163,19 +172,21 @@ function Handler:SetCFrame(CF : CFrame)
 end
 
 function Handler:CalculateTolerance()
-    return (1 - math.abs(self.Camera.CFrame.ZVector.Y)) * MaxIdleRotation
+    local YFactor = (math.abs(self.Camera.CFrame.ZVector.Y)-SHOULDER_DEADZONE) * 1/(1-SHOULDER_DEADZONE-FEET_DEADZONE)
+    YFactor = math.clamp(YFactor,0,1)
+    return (1 - YFactor) * MAX_IDLE_ROTATION
 end
 
-function Handler:GetMaxIdleRotation()
-    return MaxIdleRotation
+function Handler:GetMAX_IDLE_ROTATION()
+    return MAX_IDLE_ROTATION
 end
 
-function Handler:GetMaxStrafeRotation()
-    return MaxStrafeRotation
+function Handler:GetMAX_STRAFE_ROTATION()
+    return MAX_STRAFE_ROTATION
 end
 
-function Handler:GetMaxReverseRotation()
-    return MaxReverseRotation
+function Handler:GetMAX_REVERSE_ROTATION()
+    return MAX_REVERSE_ROTATION
 end
 
 --// RETURN
