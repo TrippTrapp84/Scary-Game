@@ -70,11 +70,7 @@ function Socket.new(Data)
                 EVENT_NETWORK.sendPacket(Obj.EventNames.API_AUTHORIZATION_CHANGED, { authorized = false, initial_attempt = Obj.IsFirstRequest })
                 return;
             elseif response.StatusCode == 200 then -- 200 is tenative
-                -- Returns the data in a json object in the body. Then we can fire an event from here to handle that data 
-                local isValid, json_data = pcall(function() HttpService:JSONDecode(response.Body) end)
-                if isValid then
-                    EVENT_NETWORK.sendPacket(Obj.EventNames.WEBSOCKET_GOT_DATA, json_data)
-                end
+                EVENT_NETWORK.sendPacket(Obj.EventNames.WEBSOCKET_GOT_DATA, response.Body)
             end
 
             -- If it's the first request and we made it this far, then we are authorized and need to tell the manager

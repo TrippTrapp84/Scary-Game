@@ -64,19 +64,26 @@ function ApiManager.new(Data)
     Obj:DefineSocketEvents()
     Obj:AttemptToClaimMasterServer()
 
-    Obj.MasterServerTerminatingMSEvent = MessagingService:SubscribeAsync(MESSAGING_SERVICE_TOPICS.MASTER_TERMINATING, function(packet)
+    Obj.MasterServerTerminatingEvent = MessagingService:SubscribeAsync(MESSAGING_SERVICE_TOPICS.MASTER_TERMINATING, function(packet)
         if (packet.Data.current_master_id ~= Obj.ServerUUID) then
             MessagingService:PublishAsync(MESSAGING_SERVICE_TOPICS.MASTER_SERVER_RESPONSE, { responder = Obj.ServerUUID })
         end
     end)
 
-    Obj.MasterServerValidationMSEvent = MessagingService:SubscribeAsync(MESSAGING_SERVICE_TOPICS.MASTER_SERVER_VALIDATION, function(packet)
+    Obj.MasterServerValidationEvent = MessagingService:SubscribeAsync(MESSAGING_SERVICE_TOPICS.MASTER_SERVER_VALIDATION, function(packet)
         if (packet.Data.new_master == Obj.ServerUUID) then
             Obj:AttemptToClaimMasterServer()
         end
     end)
 
-    game:BindToClose(Obj:Terminating)
+    Obj.MasterServerDataEvent = MessagingService:SubscribeAsync(MESSAGING_SERVICE_TOPICS.NEW_DATA_RECEIVED, function(packet)
+        packet = packet.Data
+        print(packet)
+    end)
+
+    game:BindToClose(function()
+        Obj:Terminating()
+    end)
 
     return Obj
 end
@@ -101,13 +108,16 @@ function ApiManager:DefineSocketEvents()
 
     -- Calls this function when the websocket gets data back from the api.
     EVENT_NETWORK.listenForPacket(EVENT_NAMES.WEBSOCKET_GOT_DATA, function(packet)
-        if (#HttpService:JSONEncode(packet) > 1024) then
+        if (#packet > 1024) then
             -- JSON element is to large to transfer over messaging service
             print("Data was found to be to large for the messaging service to handle.")
             return;
         end
 
-        MessagingService:PublishAsync(MESSAGING_SERVICE_TOPICS.NEW_DATA_RECEIVED, packet)
+        local success, data = pcall(function() return HttpService:JSONDecode(packet) end)
+        if success then
+            MessagingService:PublishAsync(MESSAGING_SERVICE_TOPICS.NEW_DATA_RECEIVED, data)
+        end
     end)
 end
 
@@ -162,8 +172,8 @@ end
 
 -- Called when terminating the server
 function ApiManager:Terminating()
-    self.MasterServerTerminatingMSEvent:Disconnect()
-    self.MasterServerValidationMSEvent:Disconnect()
+    self.MasterServerTerminatingEvent:Disconnect()
+    self.MasterServerValidationEvent:Disconnect()
 
     local success, _ = pcall(function()
         local response = HttpService:RequestAsync({
