@@ -1,6 +1,7 @@
 local RepStore = game:GetService("ReplicatedStorage")
 
-local CameraManager = require(RepStore.Camera)
+local CameraManager = require(RepStore.Modules.Camera)
+local PlayerManager = require(RepStore.Modules.PlayerManager)
 
 local PLAYER = game:GetService("Players").LocalPlayer
 local CAMERA = workspace.CurrentCamera
@@ -17,6 +18,12 @@ local function Init()
         Player = PLAYER,
         Character = CHARACTER,
         Camera = CAMERA
+    }
+
+    Services.PlayerManager = PlayerManager.new{
+        Player = PLAYER,
+        Character = CHARACTER,
+        InitialState = "Idle"
     }
 
     return true

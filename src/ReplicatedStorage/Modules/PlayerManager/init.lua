@@ -1,6 +1,7 @@
 --// SERVICES
 local RepStore = game:GetService("ReplicatedStorage")
 local UIS = game:GetService("UserInputService")
+local RunServ = game:GetService("RunService")
 
 --// REQUIRES
 local StateMachine = require(RepStore.Network.Utility.States)
@@ -11,6 +12,7 @@ local StateSwitchFunctions = require(script.StateChangedFunctions)
 local NULL = {}
 
 --// VARIABLES
+local Camera = workspace.CurrentCamera
 local AnimationNames = {
     "WalkLeft",
     "WalkRight",
@@ -83,8 +85,8 @@ Handler.__index = Handler
 local function DefaultValues()
     return {
         StartingHealth = 100,
+        Animations = {},
         InitialState = NULL,
-        Animations = NULL,
         Player = NULL,
         Character = NULL
     }
@@ -121,7 +123,6 @@ function Handler.new(Data)
         end
     end)
 
-    Obj:InitPlayer()
     if Obj.InitialState == "Dead" then
         Obj.QueuedDamage += 100
         Obj.GameStateMachine:switch("Attacked")
@@ -146,6 +147,13 @@ function Handler.new(Data)
     for i,v in pairs(Obj.Animations) do
         Obj.AnimationTracks[i] = Obj.AnimationTracks[i] or Obj.Character.Humanoid.Animator:LoadAnimation(v)
     end
+    
+    --// debugging purposes only:
+    coroutine.wrap(function()
+        while wait(0.1) do
+            Obj:CalculateWalkWeights()
+        end
+    end)()
 
     return Obj
 end
@@ -160,7 +168,7 @@ function Handler:TriggerAttacked()
 end
 
 function Handler:StartWalking()
-    self.Connections.WalkConnection = 
+    --self.Connections.WalkConnection
 end
 
 function Handler:IsWalkAnimating()
@@ -171,8 +179,32 @@ function Handler:IsActionAnimating()
     return self.ActionAnimPlaying
 end
 
-function Handler:BeginWalk()
-    local Keys = UIS
+function Handler:BeginWalkAnimation()
+
+end
+
+function Handler:CalculateWalkWeights()
+    local Forward,Backward,Left,Right = UIS:IsKeyDown(Enum.KeyCode.W),UIS:IsKeyDown(Enum.KeyCode.S),UIS:IsKeyDown(Enum.KeyCode.A),UIS:IsKeyDown(Enum.KeyCode.D)
+    if not (((Forward or Backward) and not (Forward and Backward)) or ((Right or Left) and not (Right and Left))) then return false end
+    local MoveVector = Vector3.new(
+        (Left and 1 or 0) + (Right and -1 or 0),
+        0,
+        (Forward and 1 or 0) + (Backward and -1 or 0)
+    ).Unit
+    MoveVector = Camera.CFrame:PointToWorldSpace(MoveVector) - Camera.CFrame.Position
+    MoveVector = Vector3.new(MoveVector.X,0,MoveVector.Z).Unit
+    local CharacterMoveVector : Vector3 = self.Character.HumanoidRootPart.CFrame.ZVector
+    local Angle = math.acos(math.clamp(MoveVector:Dot(CharacterMoveVector),-1,1)) * 180/math.pi
+    if Angle ~= 0 and Angle ~= 180 then
+        Angle *= MoveVector:Cross(CharacterMoveVector).Unit.Y
+    end
+    local Tolerance = _G.Services.Character.CameraHandler:CalculateTolerance()
+    print(math.clamp(1 - math.abs(Angle - 90)/90,0,1))
+    return
+    math.clamp(1 - (math.abs(Angle)/90),0,1), --// Forward
+    math.clamp(math.abs(Angle)/90 - 1,0,1), --// Backward
+    math.clamp(1 - math.abs(Angle + 90)/90,0,1), --// Left
+    math.clamp(1 - math.abs(Angle - 90)/90,0,1) --// Right
 end
 
 --// RETURN

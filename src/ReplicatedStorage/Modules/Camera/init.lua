@@ -119,12 +119,13 @@ function Handler.new(Data)
                 Tolorance = math.clamp(Tolorance, 0, MaxStrafeRotation)
             end
             local targetHRPCFrame = CFrame.lookAt(HRP.Position, HRP.Position + HRPZ)
-            local AngleDiff =1 targetHRPCFrame:ToObjectSpace(HRP.CFrame)
+            local AngleDiff = targetHRPCFrame:ToObjectSpace(HRP.CFrame)
             local DotResult = AngleDiff.ZVector.Unit:Dot(Vector3.new(0, 0, 1))
             local Angle = math.acos(DotResult) * 180/math.pi * math.sign(AngleDiff.ZVector.X)
             Angle = math.clamp(Angle, -Tolorance, Tolorance)
             AngleDiff = CFrame.Angles(0, math.rad(Angle), 0)
             --print(Angle, Tolorance)
+            HRP.CFrame = targetHRPCFrame * AngleDiff
             --HRP.CFrame = HRP.CFrame:Lerp(targetHRPCFrame * AngleDiff, .7) --// produced some weird results, removing this for now
             for _, bp in pairs(Obj.Character:GetChildren()) do
                 if bp:IsA("MeshPart") then
