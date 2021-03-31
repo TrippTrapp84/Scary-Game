@@ -63,23 +63,7 @@ function ApiManager.new(Data)
 
     Obj:DefineSocketEvents()
     Obj:AttemptToClaimMasterServer()
-
-    Obj.MasterServerTerminatingEvent = MessagingService:SubscribeAsync(MESSAGING_SERVICE_TOPICS.MASTER_TERMINATING, function(packet)
-        if (packet.Data.current_master_id ~= Obj.ServerUUID) then
-            MessagingService:PublishAsync(MESSAGING_SERVICE_TOPICS.MASTER_SERVER_RESPONSE, { responder = Obj.ServerUUID })
-        end
-    end)
-
-    Obj.MasterServerValidationEvent = MessagingService:SubscribeAsync(MESSAGING_SERVICE_TOPICS.MASTER_SERVER_VALIDATION, function(packet)
-        if (packet.Data.new_master == Obj.ServerUUID) then
-            Obj:AttemptToClaimMasterServer()
-        end
-    end)
-
-    Obj.MasterServerDataEvent = MessagingService:SubscribeAsync(MESSAGING_SERVICE_TOPICS.NEW_DATA_RECEIVED, function(packet)
-        packet = packet.Data
-        print(packet)
-    end)
+    Obj:ConnectMessagingEvents()
 
     game:BindToClose(function()
         Obj:Terminating()
@@ -174,6 +158,7 @@ end
 function ApiManager:Terminating()
     self.MasterServerTerminatingEvent:Disconnect()
     self.MasterServerValidationEvent:Disconnect()
+    self.MasterServerDataEvent:Disconnect()
 
     local success, _ = pcall(function()
         local response = HttpService:RequestAsync({
@@ -205,6 +190,25 @@ function ApiManager:Terminating()
     if responder then
         MessagingService:PublishAsync(MESSAGING_SERVICE_TOPICS.MASTER_SERVER_VALIDATION, { new_master = responder })
     end
+end
+
+function ApiManager:ConnectMessagingEvents()
+    self.MasterServerTerminatingEvent = MessagingService:SubscribeAsync(MESSAGING_SERVICE_TOPICS.MASTER_TERMINATING, function(packet)
+        if (packet.Data.current_master_id ~= self.ServerUUID) then
+            MessagingService:PublishAsync(MESSAGING_SERVICE_TOPICS.MASTER_SERVER_RESPONSE, { responder = self.ServerUUID })
+        end
+    end)
+
+    self.MasterServerValidationEvent = MessagingService:SubscribeAsync(MESSAGING_SERVICE_TOPICS.MASTER_SERVER_VALIDATION, function(packet)
+        if (packet.Data.new_master == self.ServerUUID) then
+            self:AttemptToClaimMasterServer()
+        end
+    end)
+
+    self.MasterServerDataEvent = MessagingService:SubscribeAsync(MESSAGING_SERVICE_TOPICS.NEW_DATA_RECEIVED, function(packet)
+        packet = packet.Data
+        print(packet)
+    end)
 end
 
 --// RETURN
