@@ -112,7 +112,7 @@ function Handler.new(Data)
             Obj:SetCFrame(Obj.Camera.CFrame:Lerp(CameraRot, 0.8))
             CameraRot = Obj.Camera.CFrame
             local HRPZ = -Vector3.new(CameraRot.ZVector.X,0, CameraRot.ZVector.Z).Unit
-            local Tolorance = (1 - math.abs(CameraRot.ZVector.Y)) * MaxLinearAngle
+            local Tolorance = Obj:CalculateTolerance()
             if not UserInputServ:IsKeyDown(Enum.KeyCode.W) and UserInputServ:IsKeyDown(Enum.KeyCode.S) then
                 Tolorance = math.clamp(Tolorance, 0, MaxReverseLinearAngle)
             elseif UserInputServ:IsKeyDown(Enum.KeyCode.A) or UserInputServ:IsKeyDown(Enum.KeyCode.D) then
@@ -125,7 +125,7 @@ function Handler.new(Data)
             Angle = math.clamp(Angle, -Tolorance, Tolorance)
             AngleDiff = CFrame.Angles(0, math.rad(Angle), 0)
             --print(Angle, Tolorance)
-            HRP.CFrame = HRP.CFrame:Lerp(targetHRPCFrame * AngleDiff, .7)
+            --HRP.CFrame = HRP.CFrame:Lerp(targetHRPCFrame * AngleDiff, .7) --// produced some weird results, removing this for now
             for _, bp in pairs(Obj.Character:GetChildren()) do
                 if bp:IsA("MeshPart") then
                     bp.LocalTransparencyModifier = 0
@@ -160,6 +160,10 @@ function Handler:SetCFrame(CF : CFrame)
     --     CF.YVector,
     --     CF.ZVector
     -- )
+end
+
+function Handler:CalculateTolerance()
+    return (1 - math.abs(self.Camera.CFrame.ZVector.Y)) * MaxLinearAngle
 end
 
 --// RETURN
