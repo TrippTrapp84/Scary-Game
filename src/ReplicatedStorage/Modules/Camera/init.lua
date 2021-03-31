@@ -9,9 +9,9 @@ local Services = _G.Services
 --// CONSTANTS
 local NULL = {}
 local RotSpeed = 5
-local MaxReverseLinearAngle = 0
-local MaxStrafeLinearAngle = 25
-local MaxLinearAngle = 80
+local MaxReverseRotation = 0
+local MaxStrafeRotation = 25
+local MaxIdleRotation = 80
 
 --// VARIABLES
 local Mouse = Players.LocalPlayer:GetMouse()
@@ -114,12 +114,12 @@ function Handler.new(Data)
             local HRPZ = -Vector3.new(CameraRot.ZVector.X,0, CameraRot.ZVector.Z).Unit
             local Tolorance = Obj:CalculateTolerance()
             if not UserInputServ:IsKeyDown(Enum.KeyCode.W) and UserInputServ:IsKeyDown(Enum.KeyCode.S) then
-                Tolorance = math.clamp(Tolorance, 0, MaxReverseLinearAngle)
+                Tolorance = math.clamp(Tolorance, 0, MaxReverseRotation)
             elseif UserInputServ:IsKeyDown(Enum.KeyCode.A) or UserInputServ:IsKeyDown(Enum.KeyCode.D) then
-                Tolorance = math.clamp(Tolorance, 0, MaxStrafeLinearAngle)
+                Tolorance = math.clamp(Tolorance, 0, MaxStrafeRotation)
             end
             local targetHRPCFrame = CFrame.lookAt(HRP.Position, HRP.Position + HRPZ)
-            local AngleDiff = targetHRPCFrame:ToObjectSpace(HRP.CFrame)
+            local AngleDiff =1 targetHRPCFrame:ToObjectSpace(HRP.CFrame)
             local DotResult = AngleDiff.ZVector.Unit:Dot(Vector3.new(0, 0, 1))
             local Angle = math.acos(DotResult) * 180/math.pi * math.sign(AngleDiff.ZVector.X)
             Angle = math.clamp(Angle, -Tolorance, Tolorance)
@@ -163,7 +163,19 @@ function Handler:SetCFrame(CF : CFrame)
 end
 
 function Handler:CalculateTolerance()
-    return (1 - math.abs(self.Camera.CFrame.ZVector.Y)) * MaxLinearAngle
+    return (1 - math.abs(self.Camera.CFrame.ZVector.Y)) * MaxIdleRotation
+end
+
+function Handler:GetMaxIdleRotation()
+    return MaxIdleRotation
+end
+
+function Handler:GetMaxStrafeRotation()
+    return MaxStrafeRotation
+end
+
+function Handler:GetMaxReverseRotation()
+    return MaxReverseRotation
 end
 
 --// RETURN
