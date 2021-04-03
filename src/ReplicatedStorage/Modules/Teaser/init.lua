@@ -1,4 +1,5 @@
 --// SERVICES
+local RunService = game:GetService("RunService")
 
 --// REQUIRES
 
@@ -31,6 +32,10 @@ function Handler.new(Data)
     end
 
     --// INITIALIZATION
+    if RunService:IsStudio() then
+        return Obj
+    end
+
     game:GetService("StarterGui"):SetCoreGuiEnabled(Enum.CoreGuiType.All, false)
 
     local UI = game.Players.LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("Teaser")
@@ -40,40 +45,38 @@ function Handler.new(Data)
         wait()
     until game:IsLoaded()
 
-    if not game:GetService("RunService"):IsStudio() then
-        wait(.1)
-        Menu.Enabled = false
-        UI.Enabled = true
-        UI.Sound:Play()
-        Mouse.Icon = "rbxassetid://0"
-        UI.Frame.Logo.ImageTransparency = 1
-        UI.Frame.Logo.TextLabel.TextTransparency = 1
-        wait(.1)
-        for i = 0,1, .02 do
-            local t = 1 - i
-            wait()
-            UI.Frame.Logo.ImageTransparency = t
-            UI.Frame.Logo.TextLabel.TextTransparency = t
-        end
-        wait(2)
-        for i = 0,1, .02 do
-            wait()
-            UI.Frame.Logo.ImageTransparency = i
-            UI.Frame.Logo.TextLabel.TextTransparency = i
-        end
-        UI.Frame.Logo.ImageTransparency = 1
-        UI.Frame.Logo.TextLabel.TextTransparency = 1
-        wait(1)
-        for i = 0,1, .02 do
-            wait()
-            UI.Frame.BackgroundTransparency = i
-        end
-        UI.Frame.BackgroundTransparency = 1
-        UI.Enabled = false
-        game:GetService("StarterGui"):SetCoreGuiEnabled(Enum.CoreGuiType.All, true)
-        Menu.Enabled = true
-        Mouse.Icon = MouseIcon
+    wait(.1)
+    Menu.Enabled = false
+    UI.Enabled = true
+    UI.Sound:Play()
+    Mouse.Icon = "rbxassetid://0"
+    UI.Frame.Logo.ImageTransparency = 1
+    UI.Frame.Logo.TextLabel.TextTransparency = 1
+    wait(.1)
+    for i = 0,1, .02 do
+        local t = 1 - i
+        wait()
+        UI.Frame.Logo.ImageTransparency = t
+        UI.Frame.Logo.TextLabel.TextTransparency = t
     end
+    wait(2)
+    for i = 0,1, .02 do
+        wait()
+        UI.Frame.Logo.ImageTransparency = i
+        UI.Frame.Logo.TextLabel.TextTransparency = i
+    end
+    UI.Frame.Logo.ImageTransparency = 1
+    UI.Frame.Logo.TextLabel.TextTransparency = 1
+    wait(1)
+    for i = 0,1, .02 do
+        wait()
+        UI.Frame.BackgroundTransparency = i
+    end
+    UI.Frame.BackgroundTransparency = 1
+    UI.Enabled = false
+    game:GetService("StarterGui"):SetCoreGuiEnabled(Enum.CoreGuiType.All, true)
+    Menu.Enabled = true
+    Mouse.Icon = MouseIcon
 
     return Obj
 end
