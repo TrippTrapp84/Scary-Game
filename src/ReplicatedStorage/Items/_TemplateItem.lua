@@ -4,6 +4,10 @@ local Item = {
     Name = "Example" --// required, the displayed name of this tool
 }
 
+function Item:Initialize() --// called when the player adds the item to their inventory. Should not yield, only for connection or animation initialization
+
+end
+
 function Item:Drop() --// called when the player drops the item, can yield for animations
 
 end

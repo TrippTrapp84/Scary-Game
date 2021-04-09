@@ -226,8 +226,10 @@ function Handler:AddItem(Item)
         end
         self.Inventory[Index] = Item
         self.MountFrame[Index%self.Size].Icon.Image = Item.Icon
+        Item:Initialize()
         return true,Index
     end
+
 
     return false
 end
