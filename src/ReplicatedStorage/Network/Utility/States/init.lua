@@ -68,11 +68,12 @@ function machine.new(init_state, transitions)
 	
 	-- Create event listeners
 	function self.StateChanged:Connect(callback)
-		event_object.Event:Connect(function(identifier, oldState, newState)
+		local Connection = event_object.Event:Connect(function(identifier, oldState, newState)
 			if identifier == "onStateChanged" then
 				return callback(oldState, newState)
 			end
 		end)
+		return Connection
 	end
 	
 	return self
