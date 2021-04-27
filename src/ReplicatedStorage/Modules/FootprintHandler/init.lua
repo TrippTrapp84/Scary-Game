@@ -60,7 +60,7 @@ end
 function Handler:TrackCharacterFootprints(Player,Character)
     local Animator = Character:WaitForChild("Humanoid"):WaitForChild("Animator")
     Animator.AnimationPlayed:Connect(function(AnimTrack)
-        if AnimTrack.Name ~= "RunAnim" then return end
+        if AnimTrack.Name ~= "WalkForward" then return end
         if self.TrackingAnimationConnections[Player.UserId] then
             for i,v in pairs(self.TrackingAnimationConnections[Player.UserId]) do
                 v:Disconnect()
@@ -76,7 +76,10 @@ function Handler:TrackCharacterFootprints(Player,Character)
         end)
     end)
     Character.Humanoid.Died:Connect(function()
-        self.TrackingAnimationConnections[Player.UserId]:Disconnect()
+        if not self.TrackingAnimationConnections[Player.UserId] then return end
+        for _,v in pairs(self.TrackingAnimationConnections[Player.UserId]) do
+           v:Disconnect()
+        end
     end)
 end
 

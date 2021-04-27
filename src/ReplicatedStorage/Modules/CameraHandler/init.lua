@@ -57,6 +57,7 @@ local function DefaultValues()
         Player = NULL,
         Character = NULL,
         Camera = NULL,
+        Enabled = true
     }
 end
 
@@ -77,7 +78,7 @@ function Handler.new(Data)
     local Head = Obj.Character:WaitForChild("Head")
     local HRP = Obj.Character:WaitForChild("HumanoidRootPart")
     local CameraRot = nil
-    local Pitch, Yaw = 0, 0
+    Obj.Pitch, Obj.Yaw = 0, 0
 
     Obj.Camera.CameraType = Enum.CameraType.Scriptable
     Obj.Neck = Obj.Character:WaitForChild("Head"):FindFirstChild("Neck")
@@ -88,7 +89,6 @@ function Handler.new(Data)
 
     if Obj.Character then
         local Character = Obj.Character
-        local Head = Character:WaitForChild("Head")
         Head.Transparency = 1
         -- Set up childadded event to catch any accessories not caught by the initial run through.
         Obj.Connections[1] = Character.ChildAdded:Connect(function(child)
@@ -110,7 +110,7 @@ function Handler.new(Data)
         UserInputServ.MouseBehavior = Enum.MouseBehavior.LockCenter
         Obj.CameraBlur.Size = math.log(math.max(UserInputServ:GetMouseDelta().Magnitude-7,0))*2
         if Obj.Character then
-            CameraRot = CFrame.Angles(0, math.rad(Yaw), 0) * CFrame.Angles(math.rad(Pitch), 0, 0)
+            CameraRot = CFrame.Angles(0, math.rad(Obj.Yaw), 0) * CFrame.Angles(math.rad(Obj.Pitch), 0, 0)
             CameraRot = CFrame.fromMatrix(
                 HRP.CFrame:PointToWorldSpace(Vector3.new(0, 1.25, -.25)) + Vector3.new(CameraRot.YVector.X,0, CameraRot.YVector.Z) * .5,
                 CameraRot.XVector,
@@ -143,14 +143,6 @@ function Handler.new(Data)
         end
     end)
 
-    Obj.Connections[3] = UserInputServ.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement then
-            local DeltaX, DeltaY = -input.Delta.X, -input.Delta.Y
-            Pitch = math.clamp(Pitch + DeltaY/ROTATION_SPEED, -85, 85)
-            Yaw += DeltaX/ROTATION_SPEED
-        end
-    end)
-
     Obj.Connections[4] = Obj.Character:FindFirstChild("Humanoid").Died:Connect(function()
         for _, connection in pairs(Obj.Connections) do
             connection:Disconnect()
@@ -177,16 +169,30 @@ function Handler:CalculateTolerance()
     return (1 - YFactor) * MAX_IDLE_ROTATION
 end
 
-function Handler:GetMAX_IDLE_ROTATION()
-    return MAX_IDLE_ROTATION
+function Handler:IsEnabled()
+    return self.Enabled
 end
 
-function Handler:GetMAX_STRAFE_ROTATION()
-    return MAX_STRAFE_ROTATION
+function Handler:Enable()
+    if not self.Connections[3] then
+        self.Connections[3] = UserInputServ.InputChanged:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseMovement then
+                local DeltaX, DeltaY = -input.Delta.X, -input.Delta.Y
+                self.Pitch = math.clamp(self.Pitch + DeltaY/ROTATION_SPEED, -85, 85)
+                self.Yaw += DeltaX/ROTATION_SPEED
+            end
+        end)
+    end
+
+    self.Enabled = true
 end
 
-function Handler:GetMAX_REVERSE_ROTATION()
-    return MAX_REVERSE_ROTATION
+function Handler:Disable()
+    if self.Connections[3] then
+        self.Connections[3]:Disconnect()
+    end
+
+    self.Enabled = false
 end
 
 --// RETURN

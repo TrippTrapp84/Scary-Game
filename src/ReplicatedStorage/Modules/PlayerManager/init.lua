@@ -149,6 +149,10 @@ function Handler:TriggerAttacked()
 
 end
 
+function Handler:TriggerInteraction()
+    
+end
+
 do --// MOVEMENT FUNCTIONS
     function Handler:GetWalkAnimTracks()
         return self.AnimationTracks["WalkForward"],self.AnimationTracks["WalkBackward"],self.AnimationTracks["WalkLeft"],self.AnimationTracks["WalkRight"]

@@ -1,6 +1,6 @@
 local RepStore = game:GetService("ReplicatedStorage")
 
-local CameraManager = require(RepStore.Modules.Camera)
+local CameraManager = require(RepStore.Modules.CameraHandler)
 local PlayerManager = require(RepStore.Modules.PlayerManager)
 
 local Assets = RepStore:WaitForChild("Assets")
