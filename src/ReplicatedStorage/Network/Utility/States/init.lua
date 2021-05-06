@@ -89,12 +89,12 @@ function machine:switch(event_name, callback)
 	if self.current_submachine and self.transitions[new_state] then
 		self:unRegister()
 	end
-	
-	event_object:Fire("onStateChanged", self.current_state, new_state)
+	local oldState = self.current_state
 	self.current_state = new_state
 	if callback then
 		callback()
 	end
+	event_object:Fire("onStateChanged", oldState, new_state)
 end
 
 function machine:event(event_name, machine)

@@ -44,6 +44,7 @@ function Handler.new(Data)
     end
 
     --// INITIALIZATION
+
     Obj.Connections = {}
     Obj.HRP = Obj.Character:WaitForChild("HumanoidRootPart")
     Obj.CurrentInteract = nil
@@ -57,7 +58,7 @@ function Handler.new(Data)
         local RayParams = RaycastParams.new()
         RayParams.FilterType = Enum.RaycastFilterType.Whitelist
         RayParams.FilterDescendantsInstances = InteractParts
-        local RayRes = workspace:Raycast(Camera.CFrame.Position,Camera.CFrame.ZVector * MIN_INTERACT_DISTANCE,RayParams)
+        local RayRes = workspace:Raycast(Camera.CFrame.Position,-Camera.CFrame.ZVector * MIN_INTERACT_DISTANCE,RayParams)
         if RayRes then
             Obj:SetCurrentInteract(InteractionSets[table.find(InteractParts,RayRes.Instance)])
         else
@@ -82,10 +83,12 @@ end
 
 function Handler:Interact()
     local InteractHandler = InteractHandlers[self.CurrentInteract.HandlerName.Value]
-    Services.Character.PlayerManager:TriggerInteraction()
     self.InAction = true
-    InteractHandlers(self.CurrentInteract)
+    if not Services.Character.PlayerManager:SetState("PerformAction") then self.InAction = false return end
+    local ActionFinished = InteractHandler(self.CurrentInteract)
     self.InAction = false
+    if not ActionFinished then return end
+    Services.Character.PlayerManager:SetState("EndAction")
 end
 
 --// RETURN

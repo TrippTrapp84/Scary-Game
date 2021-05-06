@@ -1,5 +1,6 @@
 --// SERVICES
 local RepStore = game:GetService("ReplicatedStorage")
+local RunServ = game:GetService("RunService")
 
 --// REQUIRES
 local StateMachine = require(RepStore.Network.Utility.States)
@@ -57,6 +58,7 @@ function Handler.new(Data)
 
     --// INITIALIZATION
     Obj.GameStateMachine = StateMachine.new("Pre_Game",States)
+    Obj.GameTime = 12
 
     Obj.Connections = {}
 
@@ -67,6 +69,10 @@ function Handler.new(Data)
         else
             SwitchFunction(Obj)
         end
+    end)
+
+    Obj.Connections[2] = RunServ.Heartbeat:Connect(function()
+        
     end)
 
     return Obj

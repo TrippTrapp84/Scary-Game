@@ -1,7 +1,7 @@
 --// SERVICES
 local RunServ = game:GetService("RunService")
 local Players = game:GetService("Players")
-local UserInputServ = game:GetService("UserInputService")
+local UIS = game:GetService("UserInputService")
 local Lighting = game:GetService("Lighting")
 local Services = _G.Services
 
@@ -93,7 +93,7 @@ function Handler.new(Data)
         -- Set up childadded event to catch any accessories not caught by the initial run through.
         Obj.Connections[1] = Character.ChildAdded:Connect(function(child)
             if child:IsA("Accessory") then
-                local Handle = child:WaitForChild("Handle", 3)
+                local Handle = child:WaitForChild("Handle")
                 Handle.Transparency = 1
             end
         end)
@@ -105,10 +105,10 @@ function Handler.new(Data)
             end
         end
     end
-
-    Obj.Connections[2] = RunServ.RenderStepped:Connect(function()
-        UserInputServ.MouseBehavior = Enum.MouseBehavior.LockCenter
-        Obj.CameraBlur.Size = math.log(math.max(UserInputServ:GetMouseDelta().Magnitude-7,0))*2
+    Obj:SetMouseBehavior(Enum.MouseBehavior.LockCenter)
+    Obj.Connections[2] = RunServ:BindToRenderStep("CameraUpdate",250,function()
+        if not Obj.Enabled then Obj.CameraBlur.Size = 0 return end
+        Obj.CameraBlur.Size = math.log(math.max(UIS:GetMouseDelta().Magnitude-7,0))*2
         if Obj.Character then
             CameraRot = CFrame.Angles(0, math.rad(Obj.Yaw), 0) * CFrame.Angles(math.rad(Obj.Pitch), 0, 0)
             CameraRot = CFrame.fromMatrix(
@@ -117,13 +117,14 @@ function Handler.new(Data)
                 CameraRot.YVector,
                 CameraRot.ZVector
             )
-            Obj:SetCFrame(Obj.Camera.CFrame:Lerp(CameraRot, 0.8))
+            Obj.Camera.CFrame = CameraRot
+            --Obj:SetCFrame(Obj.Camera.CFrame:Lerp(CameraRot, 0.8))
             CameraRot = Obj.Camera.CFrame
             local HRPZ = -Vector3.new(CameraRot.ZVector.X,0, CameraRot.ZVector.Z).Unit
             local Tolorance = Obj:CalculateTolerance()
-            if not UserInputServ:IsKeyDown(Enum.KeyCode.W) and UserInputServ:IsKeyDown(Enum.KeyCode.S) then
+            if not UIS:IsKeyDown(Enum.KeyCode.W) and UIS:IsKeyDown(Enum.KeyCode.S) then
                 Tolorance = math.clamp(Tolorance, 0, MAX_REVERSE_ROTATION)
-            elseif UserInputServ:IsKeyDown(Enum.KeyCode.A) or UserInputServ:IsKeyDown(Enum.KeyCode.D) then
+            elseif UIS:IsKeyDown(Enum.KeyCode.A) or UIS:IsKeyDown(Enum.KeyCode.D) then
                 Tolorance = math.clamp(Tolorance, 0, MAX_STRAFE_ROTATION)
             end
             local targetHRPCFrame = CFrame.lookAt(HRP.Position, HRP.Position + HRPZ)
@@ -148,6 +149,8 @@ function Handler.new(Data)
             connection:Disconnect()
         end
     end)
+
+    Obj:Enable()
 
     return Obj
 end
@@ -175,7 +178,7 @@ end
 
 function Handler:Enable()
     if not self.Connections[3] then
-        self.Connections[3] = UserInputServ.InputChanged:Connect(function(input)
+        self.Connections[3] = UIS.InputChanged:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.MouseMovement then
                 local DeltaX, DeltaY = -input.Delta.X, -input.Delta.Y
                 self.Pitch = math.clamp(self.Pitch + DeltaY/ROTATION_SPEED, -85, 85)
@@ -190,9 +193,22 @@ end
 function Handler:Disable()
     if self.Connections[3] then
         self.Connections[3]:Disconnect()
+        self.Connections[3] = nil
     end
 
     self.Enabled = false
+end
+
+function Handler:SetPitch(Pitch)
+    self.Pitch = math.clamp(Pitch,-85,85)
+end
+
+function Handler:SetYaw(Yaw)
+    self.Yaw = Yaw
+end
+
+function Handler:SetMouseBehavior(MouseBehavior : Enum)
+    UIS.MouseBehavior = MouseBehavior
 end
 
 --// RETURN

@@ -25,10 +25,7 @@ local UnsavedData = {}
 
 local function DefaultData()
     return {
-        Currency = 0,
-        Inventory = {},
-        ActiveQuests = {},
-        CompletedQuests = {}
+        
     }
 end
 

@@ -2,19 +2,26 @@
 local RepStore = game:GetService("ReplicatedStorage")
 local UIS = game:GetService("UserInputService")
 local RunServ = game:GetService("RunService")
+local GuiService = game:GetService("GuiService")
+local Services = _G.Services
 
 --// REQUIRES
 local StateMachine = require(RepStore.Network.Utility.States)
 local Network = require(RepStore.Network.Utility.NetworkClient)
 local StateSwitchFunctions = require(script.StateChangedFunctions)
+local PlayerModule = require(game.Players.LocalPlayer.PlayerScripts:WaitForChild("PlayerModule"))
 
 --// CONSTANTS
 local NULL = {}
+local MIN_VAULT_TRIGGER_DIST = 4
+local MIN_VAULT_DOT_DIRECTION = math.cos(1/2)
 
 --// VARIABLES
 local Assets = RepStore:WaitForChild("Assets")
+local VaultTriggers = workspace.Map.ScriptedObjects.VaultingTriggers:GetChildren()
 local Animations = Assets.Animations
 local Camera = workspace.CurrentCamera
+local Controls = PlayerModule:GetControls()
 local PlayerStates = {
     Idle = {
         Walk = "Walking",
@@ -27,7 +34,7 @@ local PlayerStates = {
     Walking = {
         Stop = "Idle",
         Run = "Running",
-        Vault = "slow_Vaulting",
+        Vault = "Slow_Vaulting",
         Attacked = "Damaged",
         PerformAction = "PerformingAction",
         Pause = "Pause"
@@ -60,7 +67,7 @@ local PlayerStates = {
     },
     Pause_Damaged = {
         Died = "Dead",
-        Recover = "Pause"
+        Recover = "Idle"
     },
     Dead = {
         Ghost = "Ghosting"
@@ -76,6 +83,17 @@ function IsLeftShiftDown()
 end
 function IsLeftShiftNotDown()
     return not IsLeftShiftDown()
+end
+
+function BoxSignedDistance(Point, BoxCenter, BoxSize)
+   Point -= BoxCenter
+   local Value = Vector3.new(
+       math.max(math.abs(Point.X) - BoxSize.X,0),
+       math.max(math.abs(Point.Y) - BoxSize.Y,0),
+       math.max(math.abs(Point.Z) - BoxSize.Z,0)
+   )
+
+  return Value.Magnitude;
 end
 
 --// CONSTRUCTOR
@@ -103,6 +121,7 @@ function Handler.new(Data)
 
     --// INITIALIZATION
     Obj.PlayerStateMachine = StateMachine.new("Idle",PlayerStates)
+    Obj.OnStateChanged = Obj.PlayerStateMachine.StateChanged
 
     Obj.Connections = {}
     Obj.Animations = {}
@@ -110,16 +129,27 @@ function Handler.new(Data)
 
     Obj.QueuedDamage = 0
 
-    Obj.WalkAnimPlaying = false
-    Obj.ActionAnimPlaying = false
+    Obj.ControlsEnabled = false
+    Obj.CameraEnabled = false
 
-    Obj.Connections[1] = Obj.PlayerStateMachine.StateChanged:Connect(function(OldState,NewState)
+    Obj.Connections[1] = Obj.OnStateChanged:Connect(function(OldState,NewState)
         local SwitchFunction = StateSwitchFunctions[OldState .. "___" .. NewState]
         if not SwitchFunction then
             error("CRITICAL ERROR: UNHANDLED STATE TRANSITION EXCEPTION: [[ " .. OldState:upper() .. " ]] TO [[ " .. NewState:upper() .. " ]] IN PLAYER MANAGER")
         else
             SwitchFunction(Obj)
         end
+    end)
+
+    Obj.Connections[2] = UIS.InputBegan:Connect(function(input,gp)
+        if gp then return end
+        if input.UserInputType == Enum.UserInputType.Keyboard then
+            if input.KeyCode == Enum.KeyCode.LeftControl then
+                Obj:SetState("Vault")
+            elseif input.KeyCode == Enum.KeyCode.Backquote and not GuiService.MenuIsOpen then
+                local _ = Obj:SetState("Pause") or Obj:SetState("Unpause")
+            end
+        end        
     end)
 
     Obj.Character:WaitForChild("Humanoid"):WaitForChild("Animator")
@@ -141,16 +171,53 @@ function Handler.new(Data)
 end
 
 --// MEMBER FUNCTIONS
-function Handler:Pause()
-
+function Handler:TogglePaused(Paused)
+    if Paused then self:BeginAction() else self:EndAction() end
+    Services.Client.PauseMenuHandler:TogglePaused(Paused)
 end
 
 function Handler:TriggerAttacked()
 
 end
 
-function Handler:TriggerInteraction()
-    
+function Handler:SetControlsEnabled(Enabled)
+    if Enabled == self.ControlsEnabled then return end
+    self.ControlsEnabled = Enabled
+    if Enabled then
+        Controls:Enable()
+    else
+        Controls:Disable()
+    end
+end
+
+function Handler:SetCameraEnabled(Enabled)
+    if Enabled == self.CameraEnabled then return end
+    self.CameraEnabled = Enabled
+    if Enabled then
+        Services.Character.CameraHandler:Enable()
+    else
+        Services.Character.CameraHandler:Disable()
+    end
+end
+
+function Handler:SetState(Action)
+    if not PlayerStates[self:GetState()][Action] then return false end
+    self.PlayerStateMachine:switch(Action)
+    return true
+end
+
+function Handler:GetState()
+    return self.PlayerStateMachine.current_state
+end
+
+function Handler:BeginAction()
+    self:SetControlsEnabled(false)
+    self:SetCameraEnabled(false)
+end
+
+function Handler:EndAction()
+    self:SetControlsEnabled(true)
+    self:SetCameraEnabled(true)
 end
 
 do --// MOVEMENT FUNCTIONS
@@ -214,14 +281,73 @@ do --// MOVEMENT FUNCTIONS
         self:PlayMovementAnimations(self:GetRunAnimTracks())
     end
 
+    function Handler:ValidateVault()
+        local ZVector = Vector3.new(Camera.CFrame.ZVector.X,0,Camera.CFrame.ZVector.Z).Unit
+        local Trigger,TriggerDist,TriggerDot = nil,0,0
+        for i,v in pairs(VaultTriggers) do
+            local Dist = BoxSignedDistance(Camera.CFrame.Position,v.Position,v.Size)
+            local Dot = math.abs(ZVector:Dot(v.CFrame.ZVector))
+            local Offset = (self.Character.HumanoidRootPart.Position - v.Position).Unit
+            if Offset.Magnitude < (Offset - self.Character.HumanoidRootPart.CFrame.ZVector*TriggerDist).Magnitude then continue end
+            if Dist > MIN_VAULT_TRIGGER_DIST then continue end
+            if Dot < MIN_VAULT_DOT_DIRECTION then continue end
+            if Dot > TriggerDot then
+                TriggerDot = Dot
+                Trigger = v
+                TriggerDist = Dist
+            end
+        end
+        return Trigger,TriggerDist
+    end
+
     function Handler:ToggleVault(IsRun)
-        
+        local VaultPart,VaultTriggerDist = self:ValidateVault()
+        if not VaultPart then self.PlayerStateMachine:switch("EndVault") return end
+        self:BeginAction()
+        local VaultAnim : AnimationTrack
+        if IsRun then
+            VaultAnim = self.AnimationTracks.FastVault
+        else
+            VaultAnim = self.AnimationTracks.SlowVault
+        end
+
+        local HRPCF : CFrame = self.Character.HumanoidRootPart.CFrame
+        local ZVector : Vector3 = VaultPart.CFrame.ZVector
+        if (HRPCF.Position - VaultPart.Position).Unit:Dot(ZVector) < 0 then
+            ZVector = -ZVector
+        end
+        Services.Character.CameraHandler:SetPitch(0)
+        local YawAngle = math.acos(Vector3.new(0,0,1):Dot(ZVector))*180/math.pi
+        Services.Character.CameraHandler:SetYaw(YawAngle)
+
+        self.Character.HumanoidRootPart.CFrame = CFrame.fromMatrix(
+            HRPCF.Position,
+            HRPCF.YVector:Cross(ZVector),
+            Vector3.new(0,1,0),
+            ZVector
+        )
+        HRPCF = self.Character.HumanoidRootPart.CFrame
+
+        local VaultDistance = VaultTriggerDist + VaultPart.Size.Z + 2
+
+        VaultAnim:Play()
+        repeat
+            self.Character.HumanoidRootPart.CFrame = CFrame.fromMatrix(
+                HRPCF:PointToWorldSpace(Vector3.new(0,0,-(VaultAnim.TimePosition / VaultAnim.Length) * VaultDistance)),
+                HRPCF.XVector,
+                HRPCF.YVector,
+                HRPCF.ZVector
+            )
+            RunServ.Heartbeat:Wait()
+        until not VaultAnim.IsPlaying
+        self:EndAction()
+        self.PlayerStateMachine:switch("EndVault")
     end
 
     function Handler:ToggleMovement(IsRun)
 
         local Switched = false
-        local EndCon = self.PlayerStateMachine.StateChanged:Connect(function()
+        local EndCon = self.OnStateChanged:Connect(function()
             Switched = true
         end)
         local FAnim,BAnim,LAnim,RAnim : AnimationTrack
@@ -263,11 +389,11 @@ do --// MOVEMENT FUNCTIONS
         if RightAnim.IsPlaying then RightAnim:Stop() end
         
         local Switched = false
-        local EndCon = self.PlayerStateMachine.StateChanged:Connect(function()
+        local EndCon = self.OnStateChanged:Connect(function()
             Switched = true
         end)
         repeat
-            print("Idle function")
+            RunServ.RenderStepped:Wait()
             if self:IsMoving() then
                 if UIS:IsKeyDown("LeftShift") then
                     self.PlayerStateMachine:switch("Run")
@@ -276,7 +402,6 @@ do --// MOVEMENT FUNCTIONS
                 end
                 Switched = true
             end
-            RunServ.RenderStepped:Wait()
         until Switched
         EndCon:Disconnect()
     end

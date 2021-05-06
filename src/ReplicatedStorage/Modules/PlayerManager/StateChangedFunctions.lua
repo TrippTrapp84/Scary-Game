@@ -11,15 +11,15 @@ local StateSwitchFunctions = {}
 
 --// FUNCTIONS
 function StateSwitchFunctions.Idle___Slow_Vaulting(PlayerManager)
-	
+	PlayerManager:ToggleVault(false)
 end
 
 function StateSwitchFunctions.Idle___Pause(PlayerManager)
-	
+	PlayerManager:TogglePaused(true)
 end
 
 function StateSwitchFunctions.Idle___PerformingAction(PlayerManager)
-	
+	PlayerManager:BeginAction()
 end
 
 function StateSwitchFunctions.Idle___Damaged(PlayerManager)
@@ -36,10 +36,6 @@ function StateSwitchFunctions.Idle___Walking(PlayerManager)
     PlayerManager:ToggleMovement(false)
 end
 
-function StateSwitchFunctions.Pause_Damaged___Pause(PlayerManager)
-	
-end
-
 function StateSwitchFunctions.Pause_Damaged___Dead(PlayerManager)
 	
 end
@@ -53,19 +49,21 @@ function StateSwitchFunctions.Damaged___Dead(PlayerManager)
 end
 
 function StateSwitchFunctions.Slow_Vaulting___Idle(PlayerManager)
-	
+	print("Run.Idle")
+	PlayerManager:ToggleIdleState()
 end
 
 function StateSwitchFunctions.PerformingAction___Idle(PlayerManager)
-	
+	PlayerManager:EndAction()
+    PlayerManager:ToggleIdleState()
 end
 
 function StateSwitchFunctions.PerformingAction___Damaged(PlayerManager)
-	
+	PlayerManager:EndAction()
 end
 
 function StateSwitchFunctions.Running___Fast_Vaulting(PlayerManager)
-	
+	PlayerManager:ToggleVault(false)
 end
 
 function StateSwitchFunctions.Running___Idle(PlayerManager)
@@ -74,7 +72,7 @@ function StateSwitchFunctions.Running___Idle(PlayerManager)
 end
 
 function StateSwitchFunctions.Running___PerformingAction(PlayerManager)
-	
+	PlayerManager:BeginAction()
 end
 
 function StateSwitchFunctions.Running___Damaged(PlayerManager)
@@ -82,7 +80,7 @@ function StateSwitchFunctions.Running___Damaged(PlayerManager)
 end
 
 function StateSwitchFunctions.Running___Pause(PlayerManager)
-	
+	PlayerManager:TogglePaused(true)
 end
 
 function StateSwitchFunctions.Running___Walking(PlayerManager)
@@ -90,8 +88,8 @@ function StateSwitchFunctions.Running___Walking(PlayerManager)
 	PlayerManager:ToggleMovement(false)
 end
 
-function StateSwitchFunctions.Walking___slow_Vaulting(PlayerManager)
-	
+function StateSwitchFunctions.Walking___Slow_Vaulting(PlayerManager)
+	PlayerManager:ToggleVault(false)
 end
 
 function StateSwitchFunctions.Walking___Idle(PlayerManager)
@@ -100,7 +98,7 @@ function StateSwitchFunctions.Walking___Idle(PlayerManager)
 end
 
 function StateSwitchFunctions.Walking___Pause(PlayerManager)
-	
+	PlayerManager:TogglePaused(true)
 end
 
 function StateSwitchFunctions.Walking___Damaged(PlayerManager)
@@ -113,7 +111,7 @@ function StateSwitchFunctions.Walking___Running(PlayerManager)
 end
 
 function StateSwitchFunctions.Walking___PerformingAction(PlayerManager)
-	
+	PlayerManager:BeginAction()
 end
 
 function StateSwitchFunctions.Fast_Vaulting___Running(PlayerManager)
@@ -125,11 +123,11 @@ function StateSwitchFunctions.Ghosting___Idle(PlayerManager)
 end
 
 function StateSwitchFunctions.Pause___Pause_Damaged(PlayerManager)
-	
+	PlayerManager:TogglePaused(false)
 end
 
 function StateSwitchFunctions.Pause___Idle(PlayerManager)
-	
+	PlayerManager:TogglePaused(false)
 end
 
 function StateSwitchFunctions.Dead___Ghosting(PlayerManager)
